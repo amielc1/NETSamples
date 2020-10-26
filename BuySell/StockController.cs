@@ -11,49 +11,44 @@ using System.Collections.ObjectModel;
 
 namespace Pluralsight.ConcurrentCollections.BuyAndSell
 {
-	public class StockController
-	{
-		private Dictionary<string, int> _stock = new Dictionary<string, int>();
-		int _totalQuantityBought;
-		int _totalQuantitySold;
-		public void BuyShirts(string code, int quantityToBuy)
-		{
-			if (!_stock.ContainsKey(code))
-				_stock.Add(code, 0);
-			_stock[code] += quantityToBuy;
-			_totalQuantityBought += quantityToBuy;
-		}
+    public class StockController
+    {
+        private ConcurrentDictionary<string, int> _stock = new ConcurrentDictionary<string, int>();
+        int _totalQuantityBought;
+        int _totalQuantitySold;
+        public void BuyShirts(string code, int quantityToBuy)
+        {
+            _stock.AddOrUpdate(code, quantityToBuy, (code, oldVaiue) => oldVaiue + quantityToBuy);
+            Interlocked.Add(ref _totalQuantityBought, quantityToBuy);
+        }
 
-		public bool TrySellShirt(string code)
-		{
-			if (_stock.TryGetValue(code, out int stock) && stock > 0)
-			{
-				--_stock[code];
-				++_totalQuantitySold;
-				return true;
-			}
-			else
-				return false;
-		}
+        public bool TrySellShirt(string code)
+        {
+            _stock.AddOrUpdate(code, 0, (code, oldVal) => oldVal > 0 ? oldVal - 1 : oldVal);
+            Interlocked.Increment(ref _totalQuantitySold);
+            //ToDo : fix this method. in case the item isn't in dic - we not need to increment.
+            return true;
 
-		public void DisplayStock()
-		{
-			Console.WriteLine("Stock levels by item:");
-			foreach (TShirt shirt in TShirtProvider.AllShirts)
-			{
-				_stock.TryGetValue(shirt.Code, out int stockLevel);
-				Console.WriteLine($"{shirt.Name,-30}: {stockLevel}");
-			}
+        }
 
-			int totalStock = _stock.Values.Sum();
-			Console.WriteLine($"\r\nBought = {_totalQuantityBought}");
-			Console.WriteLine($"Sold   = {_totalQuantitySold}");
-			Console.WriteLine($"Stock  = {totalStock}");
-			int error = totalStock + _totalQuantitySold - _totalQuantityBought;
-			if (error == 0)
-				Console.WriteLine("Stock levels match");
-			else
-				Console.WriteLine($"Error in stock level: {error}");
-		}
-	}
+        public void DisplayStock()
+        {
+            Console.WriteLine("Stock levels by item:");
+            foreach (TShirt shirt in TShirtProvider.AllShirts)
+            {
+                int stockLevel = _stock.GetOrAdd(shirt.Code, 0);
+                Console.WriteLine($"{shirt.Name,-30}: {stockLevel}");
+            }
+
+            int totalStock = _stock.Values.Sum();
+            Console.WriteLine($"\r\nBought = {_totalQuantityBought}");
+            Console.WriteLine($"Sold   = {_totalQuantitySold}");
+            Console.WriteLine($"Stock  = {totalStock}");
+            int error = totalStock + _totalQuantitySold - _totalQuantityBought;
+            if (error == 0)
+                Console.WriteLine("Stock levels match");
+            else
+                Console.WriteLine($"Error in stock level: {error}");
+        }
+    }
 }
