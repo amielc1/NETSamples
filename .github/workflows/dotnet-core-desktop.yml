@@ -1,22 +1,11 @@
-name: .NET Core CI
+name: Tests
 
-on: [push]
+on: push
 
 jobs:
-  build_and_test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest]
+  tests:
+    name: Unit Testing
+    runs-on: windows-latest
     steps:
-    - name: Setup .NET Core if needed
-      uses: actions/setup-dotnet@v1.2.0
-      with:
-        dotnet-version: 3.0.100
-    - uses: actions/checkout@v1
-    - name: Build with dotnet
-      run: dotnet build ./NETSamplesConsole.sln --configuration Release
-    - name: Test with dotnet
-      run: dotnet test ./NETSamplesConsole.sln --configuration Release
-
-
+      - uses: actions/checkout@v2.1.0
+      - run: dotnet test
