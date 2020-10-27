@@ -18,16 +18,31 @@ namespace Pluralsight.ConcurrentCollections.BuyAndSell
         int _totalQuantitySold;
         public void BuyShirts(string code, int quantityToBuy)
         {
-            _stock.AddOrUpdate(code, quantityToBuy, (code, oldVaiue) => oldVaiue + quantityToBuy);
+            _stock.AddOrUpdate(code, quantityToBuy, (key, oldVaiue) => oldVaiue + quantityToBuy);
             Interlocked.Add(ref _totalQuantityBought, quantityToBuy);
         }
 
         public bool TrySellShirt(string code)
         {
-            _stock.AddOrUpdate(code, 0, (code, oldVal) => oldVal > 0 ? oldVal - 1 : oldVal);
-            Interlocked.Increment(ref _totalQuantitySold);
-            //ToDo : fix this method. in case the item isn't in dic - we not need to increment.
-            return true;
+            bool success = false;
+            int newStockLevel = _stock.AddOrUpdate(code,
+                (itemName) => { success = false; return 0; },
+                (itemName, oldValue) =>
+                {
+                    if (oldValue == 0)
+                    {
+                        success = false;
+                        return 0;
+                    }
+                    else
+                    {
+                        success = true;
+                        return oldValue - 1;
+                    }
+                });
+            if (success)
+                Interlocked.Increment(ref _totalQuantitySold);
+            return success;
 
         }
 
