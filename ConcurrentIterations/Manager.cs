@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace ConcurrentIterations
 {
-   public class Manager
+    public class Manager
     {
         ExternalSensor externalSensor = new ExternalSensor();
-        BlockingCollection<string> messages = new BlockingCollection<string>();
+        BlockingCollection<int> messages = new BlockingCollection<int>();
         LedSensor ledSensor = new LedSensor();
 
 
@@ -17,8 +18,7 @@ namespace ConcurrentIterations
         {
             externalSensor.evInvokeSensor += externalSensorHandler;
             externalSensor.Start();
-            Task ledSensorTask = Task.Factory.StartNew(()=>invokeLedSensor());
-            
+            Task ledSensorTask = Task.Factory.StartNew(() => invokeLedSensor());
         }
 
         private void invokeLedSensor()
@@ -26,13 +26,14 @@ namespace ConcurrentIterations
             foreach (var msg in messages.GetConsumingEnumerable())
             {
                 ledSensor.Blink(msg);
+                Console.WriteLine($"{DateTime.UtcNow.TimeOfDay} t:{Thread.CurrentThread.ManagedThreadId} {nameof(Manager)} {nameof(invokeLedSensor)} foreach {msg}");
             }
         }
 
-        private void externalSensorHandler(object sender, string color)
+        private void externalSensorHandler(object sender, int color)
         {
             messages.Add(color);
-            Console.WriteLine($"{DateTime.UtcNow.TimeOfDay} {nameof(Manager)} {nameof(externalSensorHandler)} Insert {color} to collection");
+            Console.WriteLine($"{DateTime.UtcNow.TimeOfDay} t:{Thread.CurrentThread.ManagedThreadId} {nameof(Manager)} {nameof(externalSensorHandler)} Insert {color} to collection");
         }
 
 
