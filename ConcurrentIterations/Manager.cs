@@ -17,7 +17,6 @@ namespace ConcurrentIterations
         public Manager()
         {
             externalSensor.evInvokeSensor += externalSensorHandler;
-            externalSensor.Start();
             Task ledSensorTask = Task.Factory.StartNew(() => invokeLedSensor());
         }
 
@@ -26,7 +25,6 @@ namespace ConcurrentIterations
             foreach (var msg in messages.GetConsumingEnumerable())
             {
                 ledSensor.Blink(msg);
-                Console.WriteLine($"{DateTime.UtcNow.TimeOfDay} t:{Thread.CurrentThread.ManagedThreadId} {nameof(Manager)} {nameof(invokeLedSensor)} foreach {msg}");
             }
         }
 

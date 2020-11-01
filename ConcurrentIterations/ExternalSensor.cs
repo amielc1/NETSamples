@@ -14,15 +14,10 @@ namespace ConcurrentIterations
 
         public ExternalSensor()
         {
-
+            Task.Factory.StartNew(() => invokeSensorInternal());
         }
-
-        public void Start()
-        {
-            Task invokeSensorInternalTask = Task.Factory.StartNew(() => invokeSensorInternal());
-        }
-
-
+ 
+         
         private void invokeSensorInternal()
         {
             while (true)
